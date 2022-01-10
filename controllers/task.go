@@ -1,97 +1,156 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 
-	"github.com/taskpoc/interfaces/db"
-	"github.com/taskpoc/model"
-	"github.com/taskpoc/utils"
 	"github.com/fatih/structs"
+	"github.com/google/uuid"
 	"github.com/labstack/echo"
 	log "github.com/sirupsen/logrus"
+	sqldb "github.com/todoapp/interfaces/db"
+	"github.com/todoapp/model"
+	"github.com/todoapp/utils"
 )
 
-type TaskList struct{
-	db *sql.DB
-	}
-	
-	func NewTaskListController(db *sql.DB) *TaskList {
-	
-		controller := new(TaskList)
-		controller.db = db
-		return controller
-		
-	}
-	
-	func (h *TaskList) GetTaskById(ctx echo.Context) error{
-	
-		staffid := ctx.Param("id")
-		log.Println("---", staffid)
-	
-		respArray,err := models.GetTaskById(staffid)
-	
-		if err != nil{
-			return ctx.JSON(http.StatusInternalServerError, utils.BldGnrRsp(500, err.Error(), nil))
-		}
-	
-		if  len(respArray) == 0{
-			return ctx.JSON(http.StatusOK, utils.BldGnrRsp(200, " No Data Found ", nil))
-		}
-	
-		respInterface := make([]interface{}, len(respArray))
-		for i, evc := range respArray {
-			mapForm := (structs.New(evc)).Map()
-			respInterface[i] = mapForm
-		}
-		return ctx.JSON(http.StatusOK, utils.BldGnrRsp(200, "Read Successfully",&respInterface))
-	}
-	
-	func (h *TaskList) GetTasksByCategory(ctx echo.Context) error{
-	
-		staffid := ctx.Param("id")
-		log.Println("---", staffid)
-	
-		respArray,err := models.GetTasksByCategory(category)
-	
-		if err != nil{
-			return ctx.JSON(http.StatusInternalServerError, utils.BldGnrRsp(500, err.Error(), nil))
-		}
-	
-		if  len(respArray) == 0{
-			return ctx.JSON(http.StatusOK, utils.BldGnrRsp(200, " No Data Found ", nil))
-		}
-	
-		respInterface := make([]interface{}, len(respArray))
-		for i, evc := range respArray {
-			mapForm := (structs.New(evc)).Map()
-			respInterface[i] = mapForm
-		}
-		return ctx.JSON(http.StatusOK, utils.BldGnrRsp(200, "Read Successfully",&respInterface))
+func GetTaskById(ctx echo.Context) error {
+
+	taskid := ctx.Param("id")
+	respArray := []model.Task{}
+	var err error
+
+	respArray, err = sqldb.GetTaskDetails(taskid)
+	log.Println("---", taskid)
+
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, utils.BldGnrRsp(500, err.Error(), nil))
 	}
 
+	if len(respArray) == 0 {
+		return ctx.JSON(http.StatusOK, utils.BldGnrRsp(200, " No Data Found ", nil))
+	}
 
-func (a *Task) InsertTaskDetails() (err error){
-	db := sqldb.CreateCon()
+	respInterface := make([]interface{}, len(respArray))
+	for i, evc := range respArray {
+		mapForm := (structs.New(evc)).Map()
+		respInterface[i] = mapForm
+	}
+	return ctx.JSON(http.StatusOK, utils.BldGnrRsp(200, "Read Successfully", &respInterface))
+}
 
-	defer db.Close()
-	tx, err := db.Begin()
+func UpdateTaskById(ctx echo.Context) error {
+
+	taskid := ctx.Param("id")
+	taskstatus := ctx.QueryParam("status")
+	var err error
+	// fmt.Println("teste" + taskid)
+	err = sqldb.UpdateTaskDetails(taskid, taskstatus)
+
 	if err != nil {
 		fmt.Println(err)
+		return ctx.JSON(http.StatusBadRequest, "Updation Failed : "+err.Error())
 	}
-	defer tx.Rollback()
+	return ctx.JSON(http.StatusOK, "Updation Success")
+}
 
-	stmt, err := tx.Prepare("INSERT INTO task(task_code, task, content, category ) VALUES(?,?,?,?)")
+func DeleteTask(ctx echo.Context) error {
+
+	taskid := ctx.Param("id")
+	var err error
+
+	err = sqldb.DeletTaskDetails(taskid)
+
 	if err != nil {
-		return
-	}
-	_, err = stmt.Exec(a.taskCode,a.task, a.content, a.Category)
-	if err != nil {
-		return
+		return ctx.JSON(http.StatusInternalServerError, utils.BldGnrRsp(500, err.Error(), nil))
 	}
 
-	err = tx.Commit()
+	return ctx.JSON(http.StatusOK, utils.BldGnrRsp(200, "Deleted Successfully", nil))
+}
+
+func GetAllTask(ctx echo.Context) error {
+
+	respArray := []model.Task{}
+	var err error
+
+	respArray, err = sqldb.GetAllTask()
+
 	if err != nil {
-		return
+		return ctx.JSON(http.StatusInternalServerError, utils.BldGnrRsp(500, err.Error(), nil))
 	}
-	return nil
+
+	if len(respArray) == 0 {
+		return ctx.JSON(http.StatusOK, utils.BldGnrRsp(200, " No Data Found ", nil))
+	}
+
+	respInterface := make([]interface{}, len(respArray))
+	for i, evc := range respArray {
+		mapForm := (structs.New(evc)).Map()
+		respInterface[i] = mapForm
+	}
+	return ctx.JSON(http.StatusOK, utils.BldGnrRsp(200, "Read Successfully", &respInterface))
+}
+
+func GetAllCategory(ctx echo.Context) error {
+
+	respArray := []model.Category{}
+	var err error
+
+	respArray, err = sqldb.GetAllCategory()
+
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, utils.BldGnrRsp(500, err.Error(), nil))
+	}
+
+	if len(respArray) == 0 {
+		return ctx.JSON(http.StatusOK, utils.BldGnrRsp(200, " No Data Found ", nil))
+	}
+
+	respInterface := make([]interface{}, len(respArray))
+	for i, evc := range respArray {
+		mapForm := (structs.New(evc)).Map()
+		respInterface[i] = mapForm
+	}
+	return ctx.JSON(http.StatusOK, utils.BldGnrRsp(200, "Read Successfully", &respInterface))
+}
+
+func GetTasksByCategory(ctx echo.Context) error {
+
+	category := ctx.Param("category")
+	respArray := []model.Task{}
+	var err error
+
+	respArray, err = sqldb.GetTasksByCategory(category)
+
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, utils.BldGnrRsp(500, err.Error(), nil))
+	}
+
+	if len(respArray) == 0 {
+		return ctx.JSON(http.StatusOK, utils.BldGnrRsp(200, " No Data Found ", nil))
+	}
+
+	respInterface := make([]interface{}, len(respArray))
+	for i, evc := range respArray {
+		mapForm := (structs.New(evc)).Map()
+		respInterface[i] = mapForm
+	}
+	return ctx.JSON(http.StatusOK, utils.BldGnrRsp(200, "Read Successfully", &respInterface))
+}
+
+func InsertTaskDetails(ctx echo.Context) error {
+
+	taskDetail := new(model.Task)
+
+	if err := ctx.Bind(taskDetail); err != nil {
+		fmt.Println(err)
+		return ctx.JSON(http.StatusBadRequest, "Unable to bind request body")
+	}
+	fmt.Println(taskDetail)
+	taskDetail.Id = uuid.New().String()
+	err := sqldb.InsertTaskDetails(*taskDetail)
+	if err != nil {
+		fmt.Println(err)
+		return ctx.JSON(http.StatusBadRequest, "Insertion Failed : "+err.Error())
+	}
+	return ctx.JSON(http.StatusOK, "Insertion Success")
 }

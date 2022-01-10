@@ -8,8 +8,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/spf13/viper"
-	"github.com/taskpoc/controllers"
-	"github.com/taskpoc/interfaces/db"
+	"github.com/todoapp/controllers"
 )
 
 func main() {
@@ -24,9 +23,6 @@ func main() {
 	}
 	port := viper.GetString("app.port")
 
-	db.SetupDB("DB")
-	defer db.Closedb()
-	// Echo instance
 	app := echo.New()
 
 	// Middleware
@@ -36,20 +32,22 @@ func main() {
 	//Add cors headers
 	app.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
-		AllowMethods: []string{echo.GET, echo.POST},
+		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE},
 	}))
+
 	// Route => handler
 	app.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Task API!\n")
 	})
 	taskGroup := app.Group("/v1/api")
-	taskGroup.Use(middleware.JWT([]byte(viper.GetString("jwt.key"))))
-	app.POST("/login", controllers.Login)
+	taskGroup.POST("/task", controllers.InsertTaskDetails)
 	taskGroup.GET("/task", controllers.GetAllTask)
-	taskGroup.GET("/task/:id", controllers.GetTaskById)
-	taskGroup.GET("/task/:category", controllers.GetTasksByCategory)
-	taskGroup.DELETE("/task/:id", controllers.DeleteTask)
-	taskGroup.POST("/task", controllers.PostTask)
+	taskGroup.GET("/category", controllers.GetAllCategory)
+	taskGroup.GET("/taskbyid/:id", controllers.GetTaskById)
+	taskGroup.PUT("/taskupdate/:id", controllers.UpdateTaskById)
+	taskGroup.DELETE("/taskdelete/:id", controllers.DeleteTask)
+	taskGroup.GET("/taskbycategory/:category", controllers.GetTasksByCategory)
+
 	// Start server
 	app.Logger.Fatal((app.Start((":" + port))))
 }

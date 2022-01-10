@@ -1,4 +1,4 @@
-package sqldb
+package db
 
 import (
 	"database/sql"
@@ -7,23 +7,23 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+var (
+	db *sql.DB //Exported Database connection
+)
+
 /*Create mysql connection*/
 func CreateCon() *sql.DB {
-	db, err := sql.Open("mysql", "todoDB/todo")
-	//db, err := sql.Open("mysql", "devstructsdit:7pi!!arsofbit$athy@tcp(bitsathyrewardsphase1.cpmfvw3nvpsc.ap-south-1.rds.amazonaws.com:3306)/bitphaseone")
+	user := "root"
+	pass := "Sound@123"
+	host := "localhost"
+	credentials := fmt.Sprintf("%s:%s@(%s:3306)/gotodo?charset=utf8&parseTime=True", user, pass, host)
+	var err error
+	db, err = sql.Open("mysql", credentials)
 
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
-		fmt.Println("db is connected")
-	}
-	//defer db.Close()
-	// make sure connection is available
-	err = db.Ping()
-	fmt.Println(err)
-	if err != nil {
-		fmt.Println("MySQL db is not connected")
-		fmt.Println(err.Error())
+		fmt.Println("Database connected successfully!!")
 	}
 	return db
 }

@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/taskpoc/operations"
-	"github.com/taskpoc/utils"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"github.com/spf13/viper"
+	"github.com/todoapp/operations"
+	"github.com/todoapp/utils"
 )
 
 func Login(c echo.Context) error {

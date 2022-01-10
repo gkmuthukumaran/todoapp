@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/boltdb/bolt"
-	"github.com/taskpoc/model"
+	"github.com/todoapp/model"
 )
 
 func initialiseUserDetails() {
@@ -33,15 +32,7 @@ func InsertUserDetails(user model.User) error {
 	if err != nil {
 		return err
 	}
-	err = db.Update(func(tx *bolt.Tx) error {
-
-		err := tx.Bucket([]byte(dbname)).Bucket([]byte("USER")).Put([]byte(user.Username), []byte(data))
-		fmt.Println("insertTest", err)
-		if err != nil {
-			return fmt.Errorf("could not insert User: %v", err)
-		}
-		return nil
-	})
+	fmt.Println(data)
 	fmt.Println("Added User")
 	return err
 }
@@ -49,27 +40,6 @@ func InsertUserDetails(user model.User) error {
 func GetUserDetails(username string) (*model.User, error) {
 	var user model.User
 	fmt.Println(username)
-	err := db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(dbname)).Bucket([]byte("USER"))
-		fmt.Println(b)
-		b.ForEach(func(k, v []byte) error {
-			fmt.Println("testLog", string(k), string(v))
-			if username == string(k) {
-				err := json.Unmarshal(v, &user)
-				if err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-		if len(username) == 0 {
-			return fmt.Errorf("Data not found!")
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
 	fmt.Println(user)
 	return &user, nil
 }
